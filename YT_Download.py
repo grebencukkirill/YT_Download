@@ -1,7 +1,6 @@
-import sys
+import sys, os
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QSettings
 from PyQt5.QtCore import *
 
 import dl_functions
@@ -32,7 +31,7 @@ class App(QWidget):
 
             # Сначала отчищаем выпадающий список, потом вписываем в него разрешения видео
             self.combo_video_res.clear()
-            res_items = dl_functions.get_res(self.qle.text())
+            res_items = dl_functions.get_res(self.qle.text(), self.combo_video_ext.currentText())
             self.combo_video_res.addItems(res_items)
         else:
             # В противном случае запускаем анимацию текста ошибки
@@ -70,7 +69,9 @@ class App(QWidget):
         # Если пользователь выбрал путь к каталогу, обновляем текст кнопки с путем и записываем путь в настройки
         if folder_path:
             self.open_button.setText(folder_path)
-            self.settings.setValue("folder_path", folder_path)
+            settings = QSettings()
+            settings.setValue('folder_path', folder_path)
+            settings.sync()
 
     # Функция анимации текста ошибки
     def show_error_animation(self):
@@ -144,35 +145,32 @@ class App(QWidget):
     def btn_download_video(self):
         ext = self.combo_video_ext.currentText()
         res = self.combo_video_res.currentText()
-        #  Если выбрана папка загрузки запускаем функцию из файла dl_functions.py
-        if self.open_button.text() != 'Папка загрузки':
-            dl_functions.dl_video(self.qle.text(),
-                                  self.open_button.text(),
-                                  self.qle_name.text(),
-                                  ext,
-                                  res)
-            # Запускаем анимацию текста окончания загрузки
-            self.show_dl_end_animation()
-        else:
-            # В противном случае запускаем анимацию текста ошибки
-            self.show_error_animation()
+        #  Запускаем функцию из файла dl_functions.py
+        dl_functions.dl_video(self.qle.text(),
+                              self.open_button.text(),
+                              self.qle_name.text(),
+                              ext,
+                              res)
+        # Запускаем анимацию текста окончания загрузки
+        self.show_dl_end_animation()
 
     # Функция загрузки аудио
     def btn_download_audio(self):
         ext = self.combo_audio_ext.currentText()
         br = self.combo_audio_bitrate.currentText()
-        #  Если выбрана папка загрузки запускаем функцию из файла dl_functions.py
-        if self.open_button.text() != 'Папка загрузки':
-            dl_functions.dl_audio(self.qle.text(),
-                                  self.open_button.text(),
-                                  self.qle_name.text(),
-                                  ext,
-                                  br)
-            # Запускаем анимацию текста окончания загрузки
-            self.show_dl_end_animation()
-        else:
-            # В противном случае запускаем анимацию текста ошибки
-            self.show_error_animation()
+        # Запускаем функцию из файла dl_functions.py
+        dl_functions.dl_audio(self.qle.text(),
+                              self.open_button.text(),
+                              self.qle_name.text(),
+                              ext,
+                              br)
+        # Запускаем анимацию текста окончания загрузки
+        self.show_dl_end_animation()
+    # Функция, которая запускается при выборе другого расширения видеофайла
+    def video_ext_changed(self):
+        self.combo_video_res.clear()
+        res_items = dl_functions.get_res(self.qle.text(), self.combo_video_ext.currentText())
+        self.combo_video_res.addItems(res_items)
 
     # Функция со всеми элементами интерфейса
     def initUI(self):
@@ -230,7 +228,7 @@ class App(QWidget):
         self.label_error.show()
 
         # Создаем кнопку для выбора папки
-        self.open_button = QPushButton("Папка загрузки", self)
+        self.open_button = QPushButton(os.path.join(os.environ['USERPROFILE'], 'Downloads'), self)
         self.open_button.clicked.connect(self.open_dialog)
         self.open_button.move(145, 160)
         self.open_button.resize(303, 36)
@@ -249,12 +247,14 @@ class App(QWidget):
         self.open_button.hide()
 
         # Создаем объект QSettings
-        self.settings = QSettings(self)
+        settings = QSettings()
+        if not settings.isWritable():
+            print('Нет прав на запись в файл настроек')
         # Считываем в нем параметр folder_path
-        saved_folder_path = self.settings.value("folder_path")
+        folder_path = settings.value('folder_path', defaultValue='')
         # Если он есть, то применяем его кнопке для выбора папки
-        if saved_folder_path:
-            self.open_button.setText(saved_folder_path)
+        if folder_path:
+            self.open_button.setText(folder_path)
 
         # Создаем поле ввода для названия файла
         self.qle_name = QLineEdit()
@@ -294,6 +294,7 @@ class App(QWidget):
         color: black;
         }
         """)
+        self.combo_video_ext.currentIndexChanged.connect(self.video_ext_changed)
         self.combo_video_ext.hide()
 
         # Создаем выпадающий список для разрешений видео
