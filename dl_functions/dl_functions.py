@@ -25,10 +25,10 @@ def get_res(url):
         ydl = yt_dlp.YoutubeDL({})
         # Создаем список разрешений видео
         res_list = [f.get('resolution') for f in ydl.extract_info(url, download=False).get('formats') if not 'audio only' in f.get('resolution') and f.get('acodec') == 'none' and f.get('vcodec') != 'none' and (f.get('ext') == 'mp4' or f.get('ext') == 'webm')]
+        # Возвращаем отсортированный список
+        return list(OrderedDict.fromkeys(res_list))
     except:
         interface.App.show_error_animation()
-    # Возвращаем отсортированный список
-    return list(OrderedDict.fromkeys(res_list))
 
 # Функция, которая скачивает видео
 def dl_video(url, path, filename, ext, video_format):
