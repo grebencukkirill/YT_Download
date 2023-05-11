@@ -8,8 +8,11 @@ import interface
 
 __all__ = ['check', 'get_res', 'dl_video', 'dl_audio']
 
+# Функция для проверки правильности ссылки
 def check(url):
+    # Создаем экземпляр класса YoutubeDL
     ydl = yt_dlp.YoutubeDL({})
+    # Пытаемся получить информацию из видео. Если получается, значит ссылка правильная - возвращаем True.
     try:
         ydl.extract_info(url, download=False)
         return True
@@ -20,11 +23,11 @@ def get_res(url):
     try:
         # Создаем экземпляр класса YoutubeDL
         ydl = yt_dlp.YoutubeDL({})
-        # Возвращаем список разрешений видео
+        # Создаем список разрешений видео
         res_list = [f.get('resolution') for f in ydl.extract_info(url, download=False).get('formats') if not 'audio only' in f.get('resolution') and f.get('acodec') == 'none' and f.get('vcodec') != 'none' and (f.get('ext') == 'mp4' or f.get('ext') == 'webm')]
-
     except:
         interface.App.show_error_animation()
+    # Возвращаем отсортированный список
     return list(OrderedDict.fromkeys(res_list))
 
 # Функция, которая скачивает видео
@@ -36,15 +39,15 @@ def dl_video(url, path, filename, ext, video_format):
         for f in ydl.extract_info(url, download=False).get('formats'):
             if f.get('resolution') == video_format and f.get('ext', None) == ext and f.get('acodec') == 'none' and f.get('vcodec') != 'none':
                 format_id = f.get('format_id')
-
-        print(format_id)
         # Если имя файла не задано, то берем название видео
         if filename == '':
             video_info = ydl.extract_info(url, download=False)
             filename = video_info.get('title')
+        # Удаляем недопустимые символы для названия файла
         filename = re.sub(r'[|*?<>:\\\n\r\t\v]', '', filename)
         # Создаем полный путь для сохранения видео
         output_path = f'{path}\\{filename}.{ext}'
+        # Удаляем файл если он уже существует
         if os.path.isfile(output_path):
             os.remove(output_path)
         # Задаем параметры для загрузки видео
@@ -58,7 +61,7 @@ def dl_video(url, path, filename, ext, video_format):
         # Скачиваем видео
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
-
+        # Ставим дату создания и изменения
         os.utime(output_path, (datetime.now().timestamp(), datetime.now().timestamp()))
     except:
         interface.App.show_error_animation()
@@ -68,13 +71,16 @@ def dl_video(url, path, filename, ext, video_format):
 def dl_audio(url, path, filename, ext, br):
     try:
         br = str(br.split(' ')[0])
-        print(br)
+        # Создаем экземпляр класса YoutubeDL
         ydl = yt_dlp.YoutubeDL({})
         if filename == '':
             audio_info = ydl.extract_info(url, download=False)
             filename = audio_info.get('title')
+        # Удаляем недопустимые символы для названия файла
         filename = re.sub(r'[|*?<>:\\\n\r\t\v]', '', filename)
+        # Создаем полный путь для сохранения видео
         output_path = f'{path}\\{filename}'
+        # Удаляем файл если он уже существует
         if os.path.isfile(f'{output_path}.{ext}'):
             os.remove(f'{output_path}.{ext}')
         ydl_opts = {
@@ -89,5 +95,7 @@ def dl_audio(url, path, filename, ext, br):
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
+        # Ставим дату создания и изменения
+        os.utime(f'{output_path}.{ext}', (datetime.now().timestamp(), datetime.now().timestamp()))
     except:
         interface.App.show_error_animation()
