@@ -1,13 +1,8 @@
 import sys, os
-import subprocess
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import *
-from PyQt5.QtCore import QProcess
-import yt_dlp, re
-from collections import OrderedDict
-from datetime import datetime
-from yt_dlp.postprocessor import FFmpegPostProcessor
+
 import dl_functions
 
 
