@@ -46,9 +46,14 @@ def dl_video(url, path, filename, ext, video_format):
     for f in ydl.extract_info(url, download=False).get('formats'):
         if f.get('resolution') == video_format and f.get('ext', None) == ext and f.get('acodec') == 'none' and f.get('vcodec') != 'none':
             format_id = f.get('format_id')
+
     for f in ydl.extract_info(url, download=False).get('formats'):
-        if f.get('resolution') == 'audio only' and f.get('asr') == 44100:
-            audio_format_id = f.get('format_id')
+        if ext == 'webm':
+            if f.get('resolution') == 'audio only' and f.get('acodec') == 'opus':
+                audio_format_id = f.get('format_id')
+        else:
+            if f.get('resolution') == 'audio only' and f.get('asr') == 44100:
+                audio_format_id = f.get('format_id')
     # Если имя файла не задано, то берем название видео
     if filename == '':
         video_info = ydl.extract_info(url, download=False)
@@ -62,7 +67,7 @@ def dl_video(url, path, filename, ext, video_format):
         i = 1
         while True:
             new_filename = f"{path}\\{filename} ({i}).{ext}"
-            if not os.path.isfile(f'{output_path} ({i}).{ext}'):
+            if not os.path.isfile(f'{path}\\{filename} ({i}).{ext}'):
                 output_path = new_filename
                 break
             i += 1
