@@ -174,7 +174,7 @@ class App(QWidget):
         res_items = dl_functions.get_res(self.qle.text(), self.combo_video_ext.currentText())
         self.combo_video_res.addItems(res_items)
 
-    # Функция, которая запускается при выборе другого расширения видеофайла
+    # Функция, которая запускается при выборе другого расширения аудиофайла
     def audio_ext_changed(self):
         ext = self.combo_audio_ext.currentText()
         if ext == 'wav':

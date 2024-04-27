@@ -7,10 +7,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 __all__ = ['check', 'get_res', 'get_bitrate', 'dl_video', 'dl_audio']
 
+ydl_opts = {
+        'quiet': True,
+        'headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+        },
+        'verbose': True
+    }
+
 # Функция для проверки правильности ссылки
 def check(url):
     # Создаем экземпляр класса YoutubeDL
-    ydl = yt_dlp.YoutubeDL({'quiet': True})
+    ydl = yt_dlp.YoutubeDL(ydl_opts)
     # Пытаемся получить информацию из видео. Если получается, значит ссылка правильная - возвращаем True.
     try:
         ydl.extract_info(url, download=False)
@@ -21,7 +29,7 @@ def check(url):
 
 def get_res(url, ext):
     # Создаем экземпляр класса YoutubeDL
-    ydl = yt_dlp.YoutubeDL({'quiet': True})
+    ydl = yt_dlp.YoutubeDL(ydl_opts)
     # Создаем список разрешений видео
     res_list = [f.get('resolution') for f in ydl.extract_info(url, download=False).get('formats') if not 'audio only' in f.get('resolution') and f.get('acodec') == 'none' and f.get('vcodec') != 'none' and (f.get('ext') == ext)]
     # Возвращаем отсортированный список
@@ -30,7 +38,7 @@ def get_res(url, ext):
 
 def get_bitrate(url):
     # Создаем экземпляр класса YoutubeDL
-    ydl = yt_dlp.YoutubeDL({'quiet': True})
+    ydl = yt_dlp.YoutubeDL(ydl_opts)
     # Создаем список частот дискретизации
     bitrate_list = [f.get('asr') for f in ydl.extract_info(url, download=False).get('formats') if f.get('asr') is not None]
     # Возвращаем отсортированный список
@@ -41,7 +49,7 @@ def get_bitrate(url):
 # Функция, которая скачивает видео
 def dl_video(url, path, filename, ext, video_format):
     # Создаем экземпляр класса YoutubeDL
-    ydl = yt_dlp.YoutubeDL({'quiet': True})
+    ydl = yt_dlp.YoutubeDL(ydl_opts)
     # Находим format_id нужного формата видео
     for f in ydl.extract_info(url, download=False).get('formats'):
         if f.get('resolution') == video_format and f.get('ext', None) == ext and f.get('acodec') == 'none' and f.get('vcodec') != 'none':
@@ -72,7 +80,7 @@ def dl_video(url, path, filename, ext, video_format):
                 break
             i += 1
     # Задаем параметры для загрузки видео
-    ydl_opts = {
+    opts = {
         'noabortonerror': True,
         'ignoreerrors ': True,
         'format': f'{format_id}+{audio_format_id}',
@@ -80,7 +88,7 @@ def dl_video(url, path, filename, ext, video_format):
         'merge_output_format': ext,
     }
     # Скачиваем видео
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    with yt_dlp.YoutubeDL(opts) as ydl:
         ydl.download([url])
     # Ставим дату создания и изменения
     os.utime(output_path, (datetime.now().timestamp(), datetime.now().timestamp()))
@@ -90,7 +98,7 @@ def dl_video(url, path, filename, ext, video_format):
 def dl_audio(url, path, filename, ext, bitrate):
     bitrate = str(bitrate.split(' ')[0])
     # Создаем экземпляр класса YoutubeDL
-    ydl = yt_dlp.YoutubeDL({'quiet': True})
+    ydl = yt_dlp.YoutubeDL(ydl_opts)
     if filename == '':
         audio_info = ydl.extract_info(url, download=False)
         filename = audio_info.get('title')
@@ -113,7 +121,7 @@ def dl_audio(url, path, filename, ext, bitrate):
             if f.get('asr') == int(bitrate) and f.get('acodec') != 'none':
                 format_ids[f.get('format_id')] = f.get('abr')
 
-        ydl_opts = {
+        opts = {
             'noabortonerror': True,
             'ignoreerrors ': True,
             'format': max(format_ids, key=format_ids.get),
@@ -124,7 +132,7 @@ def dl_audio(url, path, filename, ext, bitrate):
                 'preferredquality': bitrate}],
         }
     else:
-        ydl_opts = {
+        opts = {
             'noabortonerror': True,
             'ignoreerrors ': True,
             'format': 'bestaudio/best',
@@ -134,7 +142,8 @@ def dl_audio(url, path, filename, ext, bitrate):
                 'preferredcodec': ext,
                 'preferredquality': bitrate}],
         }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    with yt_dlp.YoutubeDL(opts) as ydl:
         ydl.download([url])
     # Ставим дату создания и изменения
-    os.utime(f'{output_path}.{ext}', (datetime.now().timestamp(), datetime.now().timestamp()))
+    os.utime(f'{output_path}.{ext}',
+             (datetime.now().timestamp(), datetime.now().timestamp()))
